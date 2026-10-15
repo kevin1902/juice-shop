@@ -11,16 +11,25 @@ jobs:
   sast_scan:
     name: Analisis Estatico de Codigo (SAST)
     runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
     steps:
       - name: Clonar codigo fuente
         uses: actions/checkout@v4
 
       - name: Ejecutar Semgrep (SAST)
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: p/ci
         # El pipeline continuara para generar el reporte completo
         continue-on-error: true
+        run: |
+          semgrep scan --config p/ci --config p/javascript --metrics=off --json-output=semgrep-report.json
+          semgrep scan --config p/ci --config p/javascript --metrics=off
+
+      - name: Guardar reporte de Semgrep
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep-report.json
 
   sca_scan:
     name: Analisis de Composicion / Dependencias (SCA)
